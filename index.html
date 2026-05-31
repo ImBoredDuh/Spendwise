@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+</head>
+<body>
+
+  <div id="auth-screen">
+    <div class="auth-box">
+      <div class="auth-logo">💰 SpendWise</div>
+      <p class="auth-tagline">Your personal budget tracker</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+      <div id="login-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="Enter your password">
+        </div>
+        <p class="error-msg" id="login-error"></p>
+        <button class="btn-auth" onclick="loginUser()">Login</button>
+      </div>
+      <div id="register-form" style="display:none;">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="reg-name" placeholder="e.g. Adjua Haynes">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-pass" placeholder="Min 6 characters">
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" id="reg-pass2" placeholder="Repeat password">
+        </div>
+        <p class="error-msg" id="register-error"></p>
+        <button class="btn-auth" onclick="registerUser()">Create Account</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="app-screen" style="display:none;">
+
+    <div class="notif-banner" id="notif-banner" style="display:none;">
+      <span id="notif-text"></span>
+      <button onclick="closeNotif()">✕</button>
+    </div>
+
+    <!-- Mobile top bar -->
+    <div class="mobile-topbar">
+      <span class="mobile-logo">💰 SpendWise</span>
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    </div>
+
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+      <div class="logo">💰 SpendWise</div>
+      <div class="user-chip" id="user-chip">👤 User</div>
+      <nav>
+        <a class="nav-link active" onclick="showPage('dashboard')">📊 Dashboard</a>
+        <a class="nav-link" onclick="showPage('income')">💵 Add Income</a>
+        <a class="nav-link" onclick="showPage('income-history')">📋 Income History</a>
+        <a class="nav-link" onclick="showPage('expenses')">🧾 Add Expense</a>
+        <a class="nav-link" onclick="showPage('expense-history')">📋 Expense History</a>
+        <a class="nav-link" onclick="showPage('budget')">🎯 Budget</a>
+        <a class="nav-link" onclick="showPage('summary')">📈 Summary</a>
+      </nav>
+      <button class="btn-logout" onclick="logoutUser()">🚪 Logout</button>
+      <div class="sidebar-footer">COMP250 Project</div>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p id="dash-greeting">Welcome back!</p>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-card s-green">
+            <div class="s-icon">💵</div>
+            <div><p class="summary-label">Total Income</p><p class="summary-value" id="dash-income">$0.00</p></div>
+          </div>
+          <div class="summary-card s-red">
+            <div class="s-icon">💸</div>
+            <div><p class="summary-label">Total Expenses</p><p class="summary-value" id="dash-expenses">$0.00</p></div>
+          </div>
+          <div class="summary-card s-blue">
+            <div class="s-icon">🏦</div>
+            <div><p class="summary-label">Balance</p><p class="summary-value" id="dash-balance">$0.00</p></div>
+          </div>
+          <div class="summary-card s-purple">
+            <div class="s-icon">🎯</div>
+            <div><p class="summary-label">Budget Used</p><p class="summary-value" id="dash-budget-used">$0.00</p></div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="box">
+            <div class="box-title">Recent Activity</div>
+            <div id="dash-recent"></div>
+          </div>
+          <div class="box">
+            <div class="box-title">Spending by Category</div>
+            <div id="dash-cats"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ADD INCOME -->
+      <div class="page" id="page-income">
+        <div class="page-header">
+          <h1>Add Income</h1>
+          <p>Record money you received</p>
+        </div>
+        <div class="box">
+          <div class="box-title" id="inc-form-title">Add Income</div>
+          <div class="form-group">
+            <label>Source</label>
+            <input type="text" id="inc-source" placeholder="e.g. Part-time job, Allowance">
+          </div>
+          <div class="form-group">
+            <label>Amount ($)</label>
+            <input type="number" id="inc-amount" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="inc-date">
+          </div>
+          <p class="error-msg" id="inc-error"></p>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-submit green-btn" id="inc-submit-btn" onclick="submitIncome()">Add Income</button>
+            <button class="btn-cancel" id="inc-cancel-btn" onclick="cancelEditIncome()" style="display:none;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- INCOME HISTORY -->
+      <div class="page" id="page-income-history">
+        <div class="page-header">
+          <h1>Income History</h1>
+          <p>All your recorded income</p>
+        </div>
+        <div class="box">
+          <div class="box-title">Income History <span class="count-badge" id="inc-count">0</span></div>
+          <div class="filter-row">
+            <label>Filter by month:</label>
+            <select id="inc-filter" onchange="renderIncomeHistory()">
+              <option value="">All</option>
+              <option value="01">January</option><option value="02">February</option>
+              <option value="03">March</option><option value="04">April</option>
+              <option value="05">May</option><option value="06">June</option>
+              <option value="07">July</option><option value="08">August</option>
+              <option value="09">September</option><option value="10">October</option>
+              <option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div id="inc-list"></div>
+        </div>
+      </div>
+
+
+      <!-- ADD EXPENSE -->
+      <div class="page" id="page-expenses">
+        <div class="page-header">
+          <h1>Add Expense</h1>
+          <p>Record what you spent and where</p>
+        </div>
+        <div class="box">
+          <div class="box-title" id="exp-form-title">Add Expense</div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="exp-desc" placeholder="e.g. Lunch, Bus fare">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount ($)</label>
+              <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="exp-category">
+                <option value="Food">🍔 Food</option>
+                <option value="Transport">🚌 Transport</option>
+                <option value="Education">📚 Education</option>
+                <option value="Entertainment">🎮 Entertainment</option>
+                <option value="Health">💊 Health</option>
+                <option value="Shopping">🛍️ Shopping</option>
+                <option value="Housing">🏠 Housing</option>
+                <option value="Other">📦 Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="exp-date">
+          </div>
+          <p class="error-msg" id="exp-error"></p>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-submit red-btn" id="exp-submit-btn" onclick="submitExpense()">Add Expense</button>
+            <button class="btn-cancel" id="exp-cancel-btn" onclick="cancelEditExpense()" style="display:none;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- EXPENSE HISTORY -->
+      <div class="page" id="page-expense-history">
+        <div class="page-header">
+          <h1>Expense History</h1>
+          <p>All your recorded expenses</p>
+        </div>
+        <div class="box">
+          <div class="box-title">Expense History <span class="count-badge" id="exp-count">0</span></div>
+          <div class="filter-row">
+            <label>Filter by month:</label>
+            <select id="exp-filter" onchange="renderExpenseHistory()">
+              <option value="">All</option>
+              <option value="01">January</option><option value="02">February</option>
+              <option value="03">March</option><option value="04">April</option>
+              <option value="05">May</option><option value="06">June</option>
+              <option value="07">July</option><option value="08">August</option>
+              <option value="09">September</option><option value="10">October</option>
+              <option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div id="exp-list"></div>
+        </div>
+      </div>
+
+
+      <!-- BUDGET -->
+      <div class="page" id="page-budget">
+        <div class="page-header">
+          <h1>Budget</h1>
+          <p>Set your monthly spending limit</p>
+        </div>
+        <div class="box" style="margin-bottom:20px;">
+          <div class="box-title">Monthly Budget Limit</div>
+          <p class="hint-text">Set your total monthly spending limit across all categories.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Monthly Limit ($)</label>
+              <input type="number" id="b-limit" placeholder="e.g. 500" min="0" step="0.01">
+            </div>
+            <div class="form-group btn-align">
+              <label>&nbsp;</label>
+              <button class="btn-submit" onclick="updateBudget()">Set Limit</button>
+            </div>
+          </div>
+          <p class="error-msg" id="budget-error"></p>
+        </div>
+        <div id="budget-status-wrap"></div>
+        <div class="box">
+          <div class="box-title">Spending by Category</div>
+          <div id="budget-cats"></div>
+        </div>
+      </div>
+
+
+      <!-- SUMMARY -->
+      <div class="page" id="page-summary">
+        <div class="page-header">
+          <h1>Monthly Summary</h1>
+          <p>View your finances for a selected period</p>
+        </div>
+        <div class="box" style="margin-bottom:20px;">
+          <div class="box-title">Select Period</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Year</label>
+              <select id="sum-year" onchange="renderSummary()">
+                <option value="">All years</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Month</label>
+              <select id="sum-month" onchange="renderSummary()">
+                <option value="">All months</option>
+                <option value="01">January</option><option value="02">February</option>
+                <option value="03">March</option><option value="04">April</option>
+                <option value="05">May</option><option value="06">June</option>
+                <option value="07">July</option><option value="08">August</option>
+                <option value="09">September</option><option value="10">October</option>
+                <option value="11">November</option><option value="12">December</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="summary-grid" style="margin-bottom:20px;">
+          <div class="summary-card s-green">
+            <div class="s-icon">💵</div>
+            <div><p class="summary-label">Income</p><p class="summary-value" id="sum-income">$0.00</p></div>
+          </div>
+          <div class="summary-card s-red">
+            <div class="s-icon">💸</div>
+            <div><p class="summary-label">Expenses</p><p class="summary-value" id="sum-expenses">$0.00</p></div>
+          </div>
+          <div class="summary-card s-blue">
+            <div class="s-icon">🏦</div>
+            <div><p class="summary-label">Balance</p><p class="summary-value" id="sum-balance">$0.00</p></div>
+          </div>
+          <div class="summary-card s-purple">
+            <div class="s-icon">💰</div>
+            <div><p class="summary-label">Savings</p><p class="summary-value" id="sum-saved">$0.00</p></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title">Category Breakdown</div>
+          <div id="sum-cats"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Mobile bottom nav -->
+    <div class="bottom-nav">
+      <a class="bottom-nav-item" onclick="showPage('dashboard')">📊<span>Home</span></a>
+      <a class="bottom-nav-item" onclick="showPage('income')">💵<span>Income</span></a>
+      <a class="bottom-nav-item" onclick="showPage('expenses')">🧾<span>Expense</span></a>
+      <a class="bottom-nav-item" onclick="showPage('budget')">🎯<span>Budget</span></a>
+      <a class="bottom-nav-item" onclick="showPage('summary')">📈<span>Summary</span></a>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
